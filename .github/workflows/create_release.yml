@@ -1,0 +1,27 @@
+name: Create GitHub Release
+
+on:
+  workflow_call:
+    inputs:
+      generated_version:
+        required: true
+        type: string
+
+jobs:
+  create_release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name:  ${{ needs.build.outputs.artifact_name }}
+          path: target
+
+      - name: Upload release to GitHub
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ inputs.generated_version }}
+          name: Release ${{ inputs.generated_version }}
+          files: target/*.jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

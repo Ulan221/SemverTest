@@ -1,0 +1,52 @@
+name: Maven Build Project
+
+on:
+  workflow_call:
+    inputs:
+      generated_version:
+        required: true
+        type: string
+    outputs:
+      artifact_name:
+        description: 'The name of the built artifact'
+        value: ${{ jobs.build.outputs.artifact_name }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      artifact_name: ${{ steps.upload_artifact.outputs.artifact_name }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21 from Azul Zulu
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'zulu'
+
+      - name: Build with Maven
+        run: |
+          echo "Version: ${{ inputs.generated_version }}"
+          mvn clean package
+
+      - name: List available artifacts
+        run: |
+          echo "Listing artifacts in target directory"
+          ls target    
+
+      - name: Upload jar artifact
+        id: upload_artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: "built-${{ inputs.generated_version }}"
+          path: target/*.jar
+
+      - name: Set artifact name for next jobs
+        id: set_artifact_name
+        run: |
+          echo "artifact_name=built-${{ inputs.generated_version }}" >> $GITHUB_ENV
+          echo "artifact_name=built-${{ inputs.generated_version }}" >> "$GITHUB_OUTPUT"
+          
+  

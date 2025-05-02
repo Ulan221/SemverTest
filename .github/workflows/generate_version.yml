@@ -1,0 +1,63 @@
+name: Generate Version
+
+on:
+  workflow_call:
+    inputs:
+      release_type:
+        type: string
+        description: "Release type (major, minor, or patch)"
+        default: patch
+      custom_version:
+        type: string
+        description: "Custom version (optional, if you want to specify a version manually)"
+        default: ""
+    outputs:
+      generated_version:
+        description: "The generated version string"
+        value: ${{ jobs.generate_version.outputs.generated_version }}
+
+jobs:
+  generate_version:
+    name: "Generate Version"
+    runs-on: ubuntu-latest
+    outputs:
+      generated_version: ${{ steps.set_version.outputs.generated_version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate version
+        id: set_version
+        run: |
+          RELEASE_TYPE="${{ inputs.release_type }}"
+          CUSTOM_VERSION="${{ inputs.custom_version }}"
+
+          if [[ -z "$CUSTOM_VERSION" ]]; then
+            LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1) || echo "0.0.0")
+            echo "Latest GitHub tag: $LATEST_TAG"
+
+            if [[ ! "$LATEST_TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Invalid tag format, using default version 0.0.0"
+              LATEST_TAG="0.0.0"
+            fi
+
+            MAJOR=$(echo "$LATEST_TAG" | cut -d. -f1 | sed 's/v//')
+            MINOR=$(echo "$LATEST_TAG" | cut -d. -f2)
+            PATCH=$(echo "$LATEST_TAG" | cut -d. -f3 | cut -d'-' -f1)
+
+            case "$RELEASE_TYPE" in
+              major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+              minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+              patch) PATCH=$((PATCH + 1)) ;;
+            esac
+
+            NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          else
+            NEW_VERSION="$CUSTOM_VERSION"
+          fi
+
+          echo "generated_version=$NEW_VERSION" >> "$GITHUB_ENV"
+          echo "generated_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Final version: $NEW_VERSION"

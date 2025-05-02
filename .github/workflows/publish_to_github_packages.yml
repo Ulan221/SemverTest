@@ -1,0 +1,50 @@
+name: Publish to GitHub Packages
+
+on:
+  workflow_call:
+    inputs:
+      generated_version:
+        required: true
+        type: string
+      repo_owner:
+        required: true
+        type: string
+      repo_name:
+        required: true
+        type: string
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21 from Azul Zulu
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'zulu'
+
+      - name: Download built jar
+        uses: actions/download-artifact@v4
+        with:
+          name: built-${{ inputs.generated_version }}
+
+      - name: Configure Maven settings with custom path
+        uses: s4u/maven-settings-action@v3.1.0
+        with:
+          settings-path: custom/settings.xml
+          servers: >
+            [
+              {
+                "id": "github",
+                "username": "${{ github.actor }}",
+                "password": "${{ secrets.GITHUB_TOKEN }}"
+              }
+            ]
+
+      - name: Deploy to Maven Repo
+        run: |
+          mvn deploy:deploy-file `
+            "-Dversion=${{ inputs.generated_version }}" `
