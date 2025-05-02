@@ -1,4 +1,4 @@
-name: Main Workflow
+name: Build-Release
 
 on:
   workflow_dispatch:
@@ -12,7 +12,7 @@ on:
           - patch
         default: patch
       custom_version:
-        description: ''
+        description: 'Custom version to be used instead of automatically generated version (optional).'
         type: string
         default: ''
 
@@ -45,4 +45,3 @@ jobs:
       generated_version: ${{ needs.generate_version.outputs.generated_version }}
       repo_owner: ${{ github.repository_owner }}
       repo_name: ${{ github.event.repository.name }}
-
