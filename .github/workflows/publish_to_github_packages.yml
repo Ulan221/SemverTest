@@ -26,15 +26,21 @@ jobs:
           java-version: '21'
           distribution: 'zulu'
 
-      - name: Download built jar
+      - name: Debug generated_version
+        run: |
+          echo "Generated version is: ${{ inputs.generated_version }}"
+
+      - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: built-${{ inputs.generated_version }}
+          name: ${{ needs.build.outputs.artifact_name }}
+          path: target
+          merge-multiple: true
 
       - name: Configure Maven settings with custom path
         uses: s4u/maven-settings-action@v3.1.0
         with:
-          settings-path: custom/settings.xml
+          settings-path: settings.xml
           servers: >
             [
               {
@@ -44,7 +50,17 @@ jobs:
               }
             ]
 
-      - name: Deploy to Maven Repo
+      - name: Set dynamic version
         run: |
-          mvn deploy:deploy-file `
-            "-Dversion=${{ inputs.generated_version }}" `
+          mvn versions:set -DnewVersion=${{ inputs.generated_version }}
+
+      - name: Rename custom jar
+        run: |
+          mv target/built-${{ inputs.generated_version }}.jar target/mcrul-ipc-${{ inputs.generated_version }}.jar
+
+      - name: Deploy using mvn deploy
+        run: |
+          mvn deploy -Drevision=${{ inputs.generated_version }} 
+      
+
+
