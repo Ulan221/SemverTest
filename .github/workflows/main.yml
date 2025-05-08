@@ -31,7 +31,9 @@ jobs:
 
   create_release:
     uses: ./.github/workflows/create_release.yml
-    needs: build
+    needs:
+      - build
+      - generate_version
     with:
       generated_version: ${{ needs.generate_version.outputs.generated_version }}
 
