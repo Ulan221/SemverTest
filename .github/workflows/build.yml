@@ -15,7 +15,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      artifact_name: ${{ steps.upload_artifact.outputs.artifact_name }}
+      artifact_name: ${{ steps.set_artifact_name.outputs.artifact_name }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -31,10 +31,11 @@ jobs:
           echo "Version: ${{ inputs.generated_version }}"
           mvn clean package
 
-      - name: List available artifacts
+      - name: Rename JAR file
         run: |
-          echo "Listing artifacts in target directory"
-          ls target    
+          FINAL_NAME=$(mvn help:evaluate -Dexpression=project.build.finalName -q -DforceStdout)
+          mv target/$FINAL_NAME.jar target/built-${{ inputs.generated_version }}.jar
+          
 
       - name: Upload jar artifact
         id: upload_artifact
@@ -46,7 +47,7 @@ jobs:
       - name: Set artifact name for next jobs
         id: set_artifact_name
         run: |
-          echo "artifact_name=built-${{ inputs.generated_version }}" >> $GITHUB_ENV
-          echo "artifact_name=built-${{ inputs.generated_version }}" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=built-${{ inputs.generated_version }}.jar" >> $GITHUB_ENV
+          echo "artifact_name=built-${{ inputs.generated_version }}.jar" >> "$GITHUB_OUTPUT"
           
   
