@@ -52,7 +52,7 @@ jobs:
 
       - name: Set dynamic version
         run: |
-          mvn versions:set -DnewVersion=${{ inputs.generated_version }}
+          mvn versions:set -DnewVersion=${{ inputs.generated_version }}   
 
       - name: Rename custom jar
         run: |
